@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Tk.pm,v 1.3 1999/02/05 22:49:28 eserte Exp eserte $
+# $Id: Tk.pm,v 1.4 1999/03/14 23:38:40 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see BikePower.pm

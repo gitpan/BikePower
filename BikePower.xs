@@ -21,6 +21,15 @@ extern "C" {
 
 #undef MYDEBUG
 
+/* 5.004 to 5.006 compatibility */
+#ifndef SvPV_nolen
+# ifdef PL_na
+#  define SvPV_nolen(s) SvPV(s,PL_na)
+# else
+#  define SvPV_nolen(s) SvPV(s,na)
+# endif
+#endif
+
 /* XXX Bei Bedarf die folgenden Makros zusammenfassen */
 #define BIKEPOWER_ACCSTRINGNUMBER_VAR(member,var) \
 	  ENTER; \
@@ -32,7 +41,7 @@ extern "C" {
 	  SPAGAIN; \
 	  if (count != 1) \
 	    croak("method call " #member " returned nothing"); \
-	  { SV *s; s = POPs; var = atof(SvPV(s,na)); }\
+	  { SV *s; s = POPs; var = atof(SvPV_nolen(s)); }\
 	  PUTBACK; \
 	  FREETMPS; \
 	  LEAVE;
@@ -47,7 +56,7 @@ extern "C" {
 	  SPAGAIN; \
 	  if (count != 1) \
 	    croak("method call " #member " returned nothing"); \
-	  { SV *s; s = POPs; strncpy(var, SvPV(s,na), 10); }\
+	  { SV *s; s = POPs; strncpy(var, SvPV_nolen(s), 10); }\
 	  PUTBACK; \
 	  FREETMPS; \
 	  LEAVE;

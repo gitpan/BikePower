@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5.1.10 1999/03/14 21:52:28 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.11 1999/03/20 14:41:35 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -26,7 +26,7 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 
 require DynaLoader;
 @ISA     = qw(DynaLoader);
-$VERSION = '0.30';
+$VERSION = '0.31';
 
 eval {
     bootstrap BikePower $VERSION;
