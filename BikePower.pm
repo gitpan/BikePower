@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5.1.4 1998/06/29 23:18:05 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.5 1998/07/28 19:50:28 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -22,7 +22,7 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 	    $VERSION
  	   );
 
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 # Conversion factors
 $m_s__per__mi_h         = 0.44704; # meters/second per miles/hour
@@ -433,6 +433,7 @@ sub output {
 	  "  mph  F_lb   P_a  P_r   P_g  P_t    P    hp   heat   " .
 	    "BM     C    Cal/hr\n";
     }
+    $self->_init_output;
     my $entry;
     for ($entry = 0; $entry < $self->N_entry; $entry++) {
 	$self->calc();
@@ -474,11 +475,149 @@ or
 
 XXX
 
+=head1 CONSTRUCTOR
+
+A new BikePower object is constructed with
+
+    $bpwr = new BikePower [options];
+
+Here is a list of possible options, which are supplied in a
+key-value-notion (e.g.
+
+    $bpwr = new BikePower '-no-ini' => 1, 'V_first' => 20;
+
+).
+
+=over 4
+
+=item -no-ini
+
+If set to true, do not use the defaults from ~/.bikepower.pl.
+
+=item -no-default
+
+If set to true, do not use any defaults (all parameters are left
+undefined).
+
+=item imperial
+
+Metric/imperial flag. If set, use imperial rather than metric units.
+
+=item T_a
+
+Temperature in °C.
+
+=item given
+
+Resolve for v (velocity), P (power) or C (consumption).
+
+=item first_C
+
+First consumption (Cal/hr) in table or other output.
+
+=item first_V
+
+First velocity (km/h) in table or other output.
+
+=item first_P
+
+First power output (Watts) in table or other output.
+
+=item V_incr
+
+Velocity increment in table.
+
+=item P_incr
+
+Power increment in table.
+
+=item C_incr
+
+Consumed_power increment in table.
+
+=item N_entry
+
+Number of entries in table, default: 10.
+
+=item C_a
+
+Air resistance coefficient.
+
+=item A1
+
+Linear coefficient of air resistance.
+
+=item A2
+
+Quadratic coefficient of air resistance.
+
+=item A_c
+
+Frontal area of the cyclist in meters^2.
+
+=item T
+
+Transmission efficiency of bicycle drivetrain.
+
+=item E
+
+Efficiency of human in cycling.
+
+=item H
+
+Velocity of headwind [meters/second].
+
+=item R
+
+Coefficient of rolling friction.
+
+=item G
+
+Grade of hill.
+
+=item Wc
+
+Weight of cyclist [kg].
+
+=item Wm
+
+Weight of machine and clothing [kg].
+
+=item BM_rate
+
+Basal metabolism rate [Watts/kg of body weight].
+
+=item cross_wind
+
+The wind given is a cross wind.
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item calc
+
+Resolve for velocity, power output or consumption (as stated in the
+"given" parameter) for the first_V, first_P or first_C parameter. The
+calculated values may be get with $bpwr->velocity, $bwpr->power or
+$bpwr->consumption.
+
+=item output
+
+Calculate and print a table with the supplied values.
+
+=back
+
 =head1 TODO
 
-    + überprüfen, ob sich TiedListbox mit BrowseEntry kombinieren läßt
-      (für Luftwiderstand und Reifengröße)
-    - Möglichkeit: mehrere Tk-Interfaces teilen sich Felder (Checkbutton)
+    + better POD!
+    + E<uuml>berprE<uuml>fen, ob sich TiedListbox mit BrowseEntry
+      kombinieren lE<auml>E<szlig>t
+      (fE<uuml>r Luftwiderstand und ReifengrE<ouml>E<szlig>e)
+    - ME<ouml>glichkeit: mehrere Tk-Interfaces teilen sich Felder
+      (Checkbutton)
 
 =head1 AUTHOR
 

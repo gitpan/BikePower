@@ -1,20 +1,61 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
+# -*- perl -*-
 
-######################### We start with some black magic to print on failure.
-
-# Change 1..1 below to 1..last_test_to_print .
-# (It may become useful if the test is moved to ./t subdirectory.)
-
-BEGIN { $| = 1; print "1..1\n"; }
+BEGIN { $| = 1; print "1..5\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use BikePower;
 $loaded = 1;
 print "ok 1\n";
 
-######################### End of black magic.
+$o = new BikePower
+  '-no-ini' => 1,
+  '-no-default' => 1,
+  'V_incr' => 2,
+  'C_a' => '0.9',
+  'A_c' => '0.4925155 (upright)',
+  'Wm' => 19,
+  'E' => '0.249',
+  'G' => '0',
+  'H' => '0',
+  'first_C' => 500,
+  'C_incr' => 100,
+  'A1' => '0',
+  'R' => '0.0066 (26 x 1.375)',
+  'T_a' => 20,
+  'T' => '0.95',
+  'first_P' => 50,
+  'given' => 'v',
+  'Wc' => 68,
+  'BM_rate' => '1.4',
+  'P_incr' => 50,
+  'cross_wind' => '0',
+  'first_V' => 16,
+  'N_entry' => 10
+;
 
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
+if (!$o->isa('BikePower')) {
+    print "not ";
+}
+print "ok 2\n";
+
+$o->velocity(30/3.6); # supply velocity in m/s
+if ($o->velocity != 30/3.6) {
+    print "not ";
+}
+print "ok 3\n";
+
+# XXX maybe rounding errors are possible?!? check it on other machines!
+
+$o->calc;
+if (int($o->power) != 212) { # Watts
+    print "not ";
+}
+print "ok 4\n";
+
+$o->given('P');
+$o->power(200);
+$o->calc;
+if (sprintf("%.1f", $o->velocity*3.6) ne "29.3") {
+    print "not ";
+}
+print "ok 5\n";
 

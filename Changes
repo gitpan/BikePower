@@ -1,5 +1,10 @@
 Revision history for Perl extension BikePower.
 
+0.15
+	- bugfix (missing _init_output)
+	- new README, improved test.pl
+	- a slightly better POD
+
 0.14
 	- tk_interface now in BikePower/Tk.pm
 
