@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5.1.7 1998/12/14 18:44:07 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.10 1999/03/14 21:52:28 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -20,10 +20,24 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 	    $NOSAVE
 	    @out %fmt @air_density %members
 	    %air_resistance @air_resistance_order
-	    $VERSION
+	    @rolling_friction
+	    @ISA $VERSION $has_xs
  	   );
 
-$VERSION = '0.17';
+require DynaLoader;
+@ISA     = qw(DynaLoader);
+$VERSION = '0.30';
+
+eval {
+    bootstrap BikePower $VERSION;
+    $has_xs = 1 unless $@;
+};
+
+if ($has_xs) {
+    *calc = \&calcXS;
+} else {
+    *calc = \&calc_slow;
+}
 
 # Conversion factors
 $m_s__per__mi_h         = 0.44704; # meters/second per miles/hour
@@ -118,11 +132,11 @@ $NOSAVE = 1 << 0;
 		    },
    'racing'      => {'A_c'     => 0.3080527,
 		     'text_en' => 'racing crouch',
-		     'text_de' => 'geduckt in Rennstellung (?)',
+		     'text_de' => 'geduckt in Rennhaltung',
 		    },
    'tuck'        => {'A_c'     => 0.2674709,
 		     'text_en' => 'full downhill tuck',
-		     'text_de' => 'Abfahrtshaltung (?)',
+		     'text_de' => 'Abfahrtshaltung',
 		    },
    'pack_end'    => {'A_c'     => 0.2213353,
 		     'text_en' => 'end of pack of 1 or more riders',
@@ -136,6 +150,33 @@ $NOSAVE = 1 << 0;
 @air_resistance_order = sort { $air_resistance{$b}->{A_c} <=>
 				 $air_resistance{$a}->{A_c}
 			   } keys %air_resistance;
+
+@rolling_friction =
+  ({'R' => 0.004,
+    'text_en' => 'narrow tubular tires, lowest',
+    'text_de' => 'schmale röhrenförmige Reifen, niedrigster Wert',
+   },
+   {'R' => 0.0047,
+    'text_en' => '26 x 1.125 inch tires',
+    'text_de' => '26 x 1.125"-Reifen',
+   },
+   {'R' => 0.0051,
+    'text_en' => '27 x 1.25 inch tires',
+    'text_de' => '27 x 1.25"-Reifen',
+   },
+   {'R' => 0.0055,
+    'text_en' => 'narrow tubular tires, highest',
+    'text_de' => 'schmale röhrenförmige Reifen, höchster Wert',
+   },
+   {'R' => 0.0066,
+    'text_en' => '26 x 1.375 inch tires',
+    'text_de' => '26 x 1.375"-Reifen',
+   },
+   {'R' => 0.0120,
+    'text_en' => 'mountain bike tires',
+    'text_de' => 'Mountainbike-Reifen',
+   },
+  );
 
 my $member;
 my $i=0;
@@ -174,6 +215,7 @@ foreach $member (keys %members) {
 ## Umwandlung. Funktioniert es mit -variable und Tk?
 sub TIEHASH {
     my($class, %a) = @_;
+    $class = (ref $class ? ref $class : $class);
 
     my $s = {};
     bless $s, $class;
@@ -200,12 +242,22 @@ sub _nosave {
 }
 
 sub clone {
-    my($class, $old, %args) = @_;
+    my($class, $old);
+    if (ref $_[0] and $_[0]->isa('BikePower')) {
+	# Syntax: $clone = $object->clone(%args);
+	$old = shift;
+	$class = ref $old;
+    } else {
+	# Syntax: $clone = clone BikePower $object, %args;
+	$class = shift;
+	$old = shift;
+    }
+    my(%args) = @_;
     $args{'-no-ini'} = $args{'-no-default'} = 1;
     my $new = $class->new(%args);
     my($k, $v);
     while(($k, $v) = each %members) {
-	next if _nosave($k) || $old->{$k} eq '';
+	next if _nosave($k) || !defined $old->{$k} || $old->{$k} eq '';
 	$new->{$k} = $old->{$k};
     }
     $new;
@@ -232,8 +284,23 @@ sub set_values {
 }
 
 sub _default_filename {
-    my $home = eval { (getpwuid($<))[7] } || $ENV{'HOME'} || '';
-    $home . ($^O eq 'MSWin32' ? "/bikepwr.pl" : "/.bikepower.pl");
+    my $home;
+    if ($^O eq 'MSWin32') {
+        eval {
+            require Win32Util; # XXX private module
+            $home = Win32Util::get_user_folder();
+            if (defined $home) {
+                $home .= "/bikepwr.rc";
+            }
+        };
+    }
+    if (!defined $home) {
+        $home = eval { local $SIG{__DIE__};
+		       (getpwuid($<))[7];
+		   } || $ENV{'HOME'} || '';
+        $home .= ($^O eq 'MSWin32' ? "/bikepwr.rc" : "/.bikepowerrc");
+    }
+    $home;
 }
 
 sub load_defaults {
@@ -322,7 +389,7 @@ sub C_incr_W_cal_hr  { $_[0]->C_incr * $Watts__per__Cal_hr }
 
 sub sqr { $_[0] * $_[0] }
 
-sub calc {
+sub calc_slow {
     my $self = shift;
     # effective Headwind
     my $eff_H = $self->headwind * ($self->cross_wind ? .7 : 1);

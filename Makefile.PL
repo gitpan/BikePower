@@ -9,6 +9,8 @@ WriteMakefile
 		   'POSTOP'=>'-$(CHMOD) 644 $(DISTVNAME).tar$(SUFFIX)'},
    'PREREQ_PM' => {'Tk'             => 402.002,
 		   'Data::Dumper'   => 2.08,
-		   'Tk::Pod'        => 0,
+		   # 'Tk::Pod'        => 0, # optional
 		  },
+   'ABSTRACT_FROM' => 'BikePower.pm',
+   'AUTHOR' => 'Slaven Rezic (eserte@cs.tu-berlin.de)',
   );

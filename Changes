@@ -1,5 +1,9 @@
 Revision history for Perl extension BikePower.
 
+0.30
+	- XS version of calc. The old perl implementation is
+	  renamed to calc_slow.
+
 0.17
 	- bugfix (save_defaults)
 

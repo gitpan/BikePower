@@ -3,6 +3,7 @@ Changes
 MANIFEST
 Makefile.PL
 test.pl
+BikePower/HTML.pm
 BikePower/Tk.pm
 BikePower/change_wind.xpm
 BikePower/crouch.xpm
@@ -16,3 +17,5 @@ BikePower/upright.xpm
 bikepwr
 tkbikepwr
 README
+typemap
+BikePower.xs

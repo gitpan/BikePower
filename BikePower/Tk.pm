@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Tk.pm,v 1.2 1998/12/12 12:38:36 eserte Exp $
+# $Id: Tk.pm,v 1.3 1999/02/05 22:49:28 eserte Exp eserte $
 # Author: Slaven Rezic
 #
 # Copyright: see BikePower.pm
@@ -42,8 +42,8 @@ sub set_lang {
 
 package BikePower::Tk;
 use BikePower;
-use vars qw($VERSION @tk_interfaces %icons);
-$VERSION = '0.02';
+use vars qw($VERSION @interfaces %icons);
+$VERSION = '0.03';
 
 # language strings
 my $lang_s =
@@ -74,21 +74,10 @@ my $lang_s =
     'Crosswind' => 'Seitenwind',
     'Grade of hill' => 'Steigung',
     'toggle up and down hill' => 'zwischen Steigung und Gefälle umschalten',
-#     'standing' => 'stehend',
-#     'upright' => 'aufrecht',
-#     'crouch' => 'geduckt',
-#     'racing crouch' => 'geduckt (Rennstellung (?))',
-#     'full downhill tuck' => 'Abfahrtshaltung (?)',
-#     'end of pack of 1 or more riders' => 'am Ende eines Verbandes',
-#     'in the middle of a pack' => 'in der Mitte eines Verbandes',
-    'Frontal area' => 'Vorderfläche (?)',
+    'Frontal area' => 'Vorderfläche (Luftwiderstand)',
     'set air resistance' => 'Luftwiderstand setzen',
     'Transmission efficiency' => 'Effizienz der Übertragung',
     'Rolling friction' => 'Rollwiderstand',
-    'narrow tubular tires, lowest' => 'schmale röhrenförmige Reifen, niedrigster Wert',
-    ' inch tires' => '"-Reifen',
-    'narrow tubular tires, highest' => 'schmale röhrenförmige Reifen, höchster Wert',
-    'mountain bike tires' => 'Mountainbike-Reifen',
     'Weight of cyclist' => 'Fahrergewicht',
     'Weight of bike+clothes' => 'Gewicht von Rad+Kleidung',
     'Resolve for' => 'Lösen für',
@@ -102,6 +91,18 @@ my $lang_s =
     'start calculation' => 'Berechnung starten',
     'automatic' => 'automatisch',
     'immediate calculation when values change' => 'sofortige Berechnung bei Wertänderung',
+    
+    'total force resisting forward motion' => 'Gesamtkraft entgegen der Vorwärtsbewegung',
+    'power output to overcome air resistance' => 'Leistung zum Überwinden des Luftwiderstands',
+    'power output to overcome rolling friction' => 'Leistung zum Überwinden des Rollwiderstands',
+    'power output to climb grade' => 'Leistung zum Überwinden der Steigung',
+    'power loss due to drivetrain inefficiency' => 'Leistungsverlust durch Übertragungsineffizienz',
+    'total power output' => 'Gesamtleistung',
+    'total power output [hp]' => 'Gesamtleistung [PS]',
+    'power wasted due to human inefficiency' => 'Leistungsverlust durch körperl. Ineffizienz',
+    #'basal metabolism' => 'XXX',
+    'total power consumption' => 'Gesamtleistungsverbrauch',
+    
    },
   };
 
@@ -159,33 +160,52 @@ sub tk_interface {
 
     my $top = $parent->Toplevel(-title => 'Bikepower');
     $self->{'_top'} = $top;
-    push(@tk_interfaces, $top);
+    push(@interfaces, $top);
 
     $top->optionAdd("*font" => '-*-helvetica-medium-r-*-14-*',
 		    'startupFile');
 
-    my $menuframe = $top->Frame(-relief => 'raised',
-				-borderwidth => 2,
-			       );
+    require Tk::Menubar;
+    my $menuframe = $top->Menubar(-relief => 'raised',
+				  -borderwidth => 2,
+				 );
+    #my $menuframe = $top->Frame(-relief => 'raised',#
+				#-borderwidth => 2,
+			       #);
+    #$menuframe->pack(-fill => 'x');
 
     my $mb_file = $menuframe->Menubutton(-text => $s{'File'},
 					 -underline => 0);
-    $mb_file->pack(-side => 'left');
+    $mb_file->pack(-side => 'left') if $Tk::VERSION < 800;
     $mb_file->command(-label => $s{'New'},
 		      -underline => 0,
- 		      -command => sub { my $bp = new BikePower;
-					$bp->tk_interface($parent) });
+ 		      -command => sub {
+			  eval {
+			      $top->Busy;
+			      my $bp = new BikePower;
+			      $bp->tk_interface($parent);
+			      $top->Unbusy;
+			  };
+			  warn $@ if $@;
+		      });
     $mb_file->command(-label => $s{'Clone'},
 		      -underline => 1,
- 		      -command => sub { my $bp = clone BikePower $self;
-					$bp->tk_interface($parent, %args) });
+ 		      -command => sub {
+ 		          eval {
+ 		              $top->Busy;
+ 		              my $bp = clone BikePower $self;
+			      $bp->tk_interface($parent, %args);
+			      $top->Unbusy;
+			  };
+			  warn $@ if $@;
+		      });
     $mb_file->command(-label => $s{'Close'},
 		      -underline => 0,
  		      -command => sub { $top->destroy });
 
     my $mb_set = $menuframe->Menubutton(-text => $s{'Settings'},
 					-underline => 0);
-    $mb_set->pack(-side => 'left');
+    $mb_set->pack(-side => 'left') if $Tk::VERSION < 800;
     $mb_set->command
       (-label => $s{'Load defaults'},
        -underline => 5,
@@ -252,7 +272,7 @@ sub tk_interface {
 
     my $mb_help = $menuframe->Menubutton(-text => $s{'Help'},
 					 -underline => 0);
-    $mb_help->pack(-side => 'right');
+    $mb_help->pack(-side => 'right') if $Tk::VERSION < 800;
     $mb_help->command
       (-label => $s{'About...'},
        -underline => 0,
@@ -278,7 +298,6 @@ sub tk_interface {
 	   }
        });
 
-    $menuframe->pack(-fill => 'x');
 
     my $f = $top->Frame->pack;
     my $balloon = $f->Balloon;
@@ -381,6 +400,13 @@ sub tk_interface {
     }
     $row++;
 
+    &$labentry($f, $row, $s{'Weight of cyclist'} . ':',
+	       \$self->{'Wc'}, 'kg');
+    $row++;
+    &$labentry($f, $row, $s{'Weight of bike+clothes'} . ':',
+	       \$self->{'Wm'}, 'kg');
+    $row++;
+
     my @std_a_c =
       map { $BikePower::air_resistance{$_}->{'A_c'} . " (" .
 	      $BikePower::air_resistance{$_}->{"text_$lang"}
@@ -420,24 +446,20 @@ sub tk_interface {
 	}
     }
 
+    {
+	my @choices;
+	foreach my $r (@BikePower::rolling_friction) {
+	    push @choices, sprintf("%-6s ", $r->{'R'}) 
+	      . "(" . $r->{"text_$lang"} . ")";
+	}
+	&$labentry($f, $row, $s{'Rolling friction'} . ':', \$self->{'R'},
+		   undef,
+		   -choices => \@choices); $row++;
+    }
+
     &$labentry($f, $row, $s{'Transmission efficiency'} . ':',
 	       \$self->{'T'}, undef,
 	       -resolution => 0.01); $row++;
-    &$labentry($f, $row, $s{'Rolling friction'} . ':', \$self->{'R'}, undef,
-	       -choices =>
-	       ['0.004  (' . $s{'narrow tubular tires, lowest'} . ')',
-		'0.0047 (26 x 1.125' . $s{' inch tires'} . ')',
-		'0.0051 (27 x 1.25' . $s{' inch tires'} . ')',
-		'0.0055 (' . $s{'narrow tubular tires, highest'} . ')',
-		'0.0066 (26 x 1.375' . $s{' inch tires'} . ')',
-		'0.0120 (' . $s{'mountain bike tires'} . ')']
-	      ); $row++;
-    &$labentry($f, $row, $s{'Weight of cyclist'} . ':',
-	       \$self->{'Wc'}, 'kg');
-    $row++;
-    &$labentry($f, $row, $s{'Weight of bike+clothes'} . ':',
-	       \$self->{'Wm'}, 'kg');
-    $row++;
     
     my $res_frame = $top->Frame(-bg => 'yellow')->pack(-fill => 'x',
 						       -ipady => 5);
@@ -542,6 +564,9 @@ sub tk_interface {
     $balloon->attach($auto_calc_check,
 	       -msg => $s{'immediate calculation when values change'});
     my $output_frame = $top->Frame(-bg => '#ffdead')->pack(-fill => 'x');
+    for (0 .. 11) {
+        $output_frame->gridColumnconfigure($_, -weight => 1);
+    }
     my $output_frame_name = '*' . substr($output_frame->PathName, 1);
     $output_frame->optionAdd($output_frame_name . "*background" 
 			     => '#ffdead', 'userDefault');
@@ -553,69 +578,81 @@ sub tk_interface {
     my $v_label = $output_frame->Label(-text => 'v',
 				       -width => 5,
 				      )->grid(-row => 0,
-					      -column => $col); $col++;
+					      -column => $col,
+					      -sticky => 'ew'); $col++;
     $balloon->attach($v_label, -msg => $s{'velocity'} . ' [km/h]');
     my $F_label = $output_frame->Label(-text => 'F',
 				       -width => 4,
 				      )->grid(-row => 0,
-					      -column => $col); $col++;
-    $balloon->attach($F_label, -msg => 'total force resisting forward motion [kg]');
+					      -column => $col,
+					      -sticky => 'ew'); $col++;
+    $balloon->attach($F_label, -msg => $s{'total force resisting forward motion'} . ' [kg]');
     my $Pa_label = $output_frame->Label(-text => 'Pa',
 					-width => 4,
 				       )->grid(-row => 0,
-					       -column => $col); $col++;
+					       -column => $col,
+					       -sticky => 'ew'); $col++;
     $balloon->attach($Pa_label,
-	       -msg => 'power output to overcome air resistance [W]');
+	       -msg => $s{'power output to overcome air resistance'} . ' [W]');
     my $Pr_label = $output_frame->Label(-text => 'Pr',
 					-width => 4,
 				       )->grid(-row => 0,
-					       -column => $col); $col++;
+					       -column => $col,
+					       -sticky => 'ew'); $col++;
     $balloon->attach($Pr_label,
-	       -msg => 'power output to overcome rolling friction [W]');
+	       -msg => $s{'power output to overcome rolling friction'} . ' [W]');
     my $Pg_label = $output_frame->Label(-text => 'Pg',
 					-width => 5,
 				       )->grid(-row => 0,
-					       -column => $col); $col++;
-    $balloon->attach($Pg_label, -msg => 'power output to climb grade [W]');
+					       -column => $col,
+					       -sticky => 'ew'); $col++;
+    $balloon->attach($Pg_label, -msg => $s{'power output to climb grade'} . ' [W]');
     my $Pt_label = $output_frame->Label(-text => 'Pt',
 					-width => 4,
 				       )->grid(-row => 0,
-					       -column => $col); $col++;
+					       -column => $col,
+					       -sticky => 'ew'); $col++;
     $balloon->attach($Pt_label,
-	       -msg => 'power loss due to drivetrain inefficiency [W]');
+	       -msg => $s{'power loss due to drivetrain inefficiency'} . ' [W]');
     my $P_label = $output_frame->Label(-text => 'P',
 				       -width => 5,
 				      )->grid(-row => 0,
-					      -column => $col); $col++;
-    $balloon->attach($P_label, -msg => 'total power output [W]');
+					      -column => $col,
+					      -sticky => 'ew'); $col++;
+    $balloon->attach($P_label, -msg => $s{'total power output'} . ' [W]');
     my $hp_label = $output_frame->Label(-text => 'hp',
 					-width => 5,
 				       )->grid(-row => 0,
-					       -column => $col); $col++;
-    $balloon->attach($hp_label, -msg => 'total power output [hp]');
+					       -column => $col,
+					       -sticky => 'ew'); $col++;
+    $balloon->attach($hp_label, -msg => $s{'total power output [hp]'});
     my $heat_label = $output_frame->Label(-text => 'heat',
 					  -width => 5,
 					 )->grid(-row => 0,
-						 -column => $col); $col++;
+						 -column => $col,
+					         -sticky => 'ew'); $col++;
     $balloon->attach($heat_label,
-	       -msg => 'power wasted due to human inefficiency [W]');
+	       -msg => $s{'power wasted due to human inefficiency'} . ' [W]');
     my $BM_label = $output_frame->Label(-text => 'BM',
 					-width => 3,
 				       )->grid(-row => 0,
-					       -column => $col); $col++;
-    $balloon->attach($BM_label, -msg => 'basal metabolism [W]');
+					       -column => $col,
+					       -sticky => 'ew'); $col++;
+    $balloon->attach($BM_label, -msg => $s{'basal metabolism'} . ' [W]');
     my $C_label = $output_frame->Label(-text => 'C',
 				       -width => 5,
 				      )->grid(-row => 0,
-					      -column => $col); $col++;
-    $balloon->attach($C_label, -msg => 'total power consumption [W]');
+					      -column => $col,
+					      -sticky => 'ew'); $col++;
+    $balloon->attach($C_label, -msg => $s{'total power consumption'} . ' [W]');
     my $kJh_label = $output_frame->Label(#-text => 'kJ/h',
 					 -text => 'cal/h',
 					 -width => 5,
 					)->grid(-row => 0,
-						-column => $col); $col++;
+						-column => $col,
+					        -sticky => 'ew'); $col++;
     $balloon->attach($kJh_label, -msg => #'total power consumption [kJ/h]'
-	       'total power consumption [cal/h]');
+	       $s{'total power consumption'} . ' [cal/h]');
 
     {
 	my $entry;
