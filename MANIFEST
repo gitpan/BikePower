@@ -1,0 +1,16 @@
+BikePower.pm
+Changes
+MANIFEST
+Makefile.PL
+test.pl
+BikePower/change_wind.xpm
+BikePower/crouch.xpm
+BikePower/pack_end.xpm
+BikePower/pack_middle.xpm
+BikePower/racing.xpm
+BikePower/standing.xpm
+BikePower/tuck.xpm
+BikePower/up_down.xpm
+BikePower/upright.xpm
+bikepwr
+tkbikepwr
