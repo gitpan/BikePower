@@ -3,6 +3,7 @@ Changes
 MANIFEST
 Makefile.PL
 test.pl
+BikePower/Tk.pm
 BikePower/change_wind.xpm
 BikePower/crouch.xpm
 BikePower/pack_end.xpm

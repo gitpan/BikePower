@@ -13,3 +13,26 @@ WriteMakefile
 		   'Tk::Pod'        => 0,
 		  },
   );
+
+sub MY::postamble {
+    if (is_in_path("strpp")) {
+	'all:: bikepower.de.html bikepower.en.html
+
+bikepower.de.html bikepower.en.html: bikepower.html.spp wwwdefaults.spp
+	-chmod +w bikepower.de.html bikepower.en.html
+	strpp --dir=. bikepower.html.spp
+	chmod -w bikepower.de.html bikepower.en.html
+
+';
+    } else {
+	'';
+    }
+}
+
+sub is_in_path {
+    my($prog) = @_;
+    foreach (split(/:/, $ENV{PATH})) {
+        return $_ if -x "$_/$prog";
+    }
+    undef;
+}

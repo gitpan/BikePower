@@ -1,5 +1,8 @@
 Revision history for Perl extension BikePower.
 
+0.14
+	- tk_interface now in BikePower/Tk.pm
+
 0.13
 	- automatic checkbutton
 	- using NumEntry if available
