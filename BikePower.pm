@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5.1.6 1998/12/12 12:39:19 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.7 1998/12/14 18:44:07 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -23,7 +23,7 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 	    $VERSION
  	   );
 
-$VERSION = '0.16';
+$VERSION = '0.17';
 
 # Conversion factors
 $m_s__per__mi_h         = 0.44704; # meters/second per miles/hour
@@ -273,9 +273,9 @@ sub save_defaults {
     if (!$@) {
 	print FILE Data::Dumper->Dump([$x], ['x']), "\n";
     } else {
-	print FILE "$x = {\n";
+	print FILE "\$x = {\n";
 	while(($k, $v) = each %$x) {
-	    print FILE $k, "=> '", $v, "'\n";
+	    print FILE $k, "=> '", $v, "',\n";
 	}
 	print FILE "}\n";
     }

@@ -1,5 +1,8 @@
 Revision history for Perl extension BikePower.
 
+0.17
+	- bugfix (save_defaults)
+
 0.16
 	- POD additions
 	- minor fixes
