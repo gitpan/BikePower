@@ -1,18 +1,32 @@
 /* XPM */
-static char *noname[] = {
-/* width height ncolors chars_per_pixel */
-"32 9 2 1",
-/* colors */
-"` c #000",
-"a c #FFF",
-/* pixels */
-"````aa````aaaaaaaaaaaaaaaaaaaaaa",
-"aaa```aaaa```````aaaaa`aaaaa`aaa",
-"aaaaa``aaaaaaaa``aaaa``aaaaa``aa",
-"``````a``````aaaaaaa```````````a",
-"`aaaaaaaaaaaa``aaaa`````````````",
-"aaaaa``aaaaaaaaaaaaa```````````a",
-"aaaaaaa`````````aaaaa``aaaaa``aa",
-"aaaaaaaa`aaaaaa```aaaa`aaaaa`aaa",
-"aa`````````````aaaaaaaaaaaaaaaaa"
-};
+static char * change_wind_xpm[] = {
+"64 25 4 1",
+" 	c #F0F0F0F0F0F0",
+".	c #000000000000",
+"X	c #FFFFFFFFD1D1",
+"o	c #FFFFFFFFFFFF",
+"       .....                                           ..       ",
+"           ..  .                                    . .    .....",
+"  .   ...... .. .                                .....    ..   .",
+"  .....    .. ....                             ...........   ...",
+"        ..........                             .....  ......    ",
+"      ...  ..XXX...                            .XXX...     .....",
+"  ..... .....XXXXX..                           .XXXXX....       ",
+"       ..   .XXXXXXX.                          .X..XXXX......   ",
+"  .....     ....XXXX..                         ..o..XXX.... ....",
+" ..        ....o.XXXX.        .     .         ......XXXX.       ",
+"         ..XX....XXXX..      ..     ..      ..XX..XXXXXX..      ",
+"         .XXXXXXXXXXXX.     ...........     .XXXXXXXXXXXX.      ",
+"        ..XXXXXXXXXXXX.    .............   ..XXXXXXXXXXXX.      ",
+"         .X...XXXX.XX..     ...........     .X...XXXXXXX..      ",
+"         ... .XXXX.XX.       ..     ..      ... .X...XXX.       ",
+"             ...X.XX..        .     .           ...XX.X..       ",
+"              ...XXX.                            ..XXXX.        ",
+"               .XXX.                              .XXX.         ",
+"               .XX..                              .XX..         ",
+"               .XX.                               .XX.          ",
+"               ..X.                               ..X.          ",
+"                ...                                ...          ",
+"               .X X.                              .X X.         ",
+"              .X X X.                            .X X X.        ",
+"             .      .                           .      .        "};

@@ -1,5 +1,13 @@
 Revision history for Perl extension BikePower.
 
+0.13
+	- automatic checkbutton
+	- using NumEntry if available
+	- Help menu: About and Reference
+	- prefer getOpenFile/getSaveFile over FileDialog (on Tk800)
+	- no failure on getpwuid (for Win32)
+	- some fixes
+
 0.10  Mon Nov 10 20:00:15 1997
 	- original version
 

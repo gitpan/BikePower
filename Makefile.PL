@@ -7,4 +7,9 @@ WriteMakefile
    'EXE_FILES'    => ['bikepwr', 'tkbikepwr'],
    'dist'      => {'COMPRESS'=>'gzip -9f', 'SUFFIX' => '.gz',
 		   'POSTOP'=>'-$(CHMOD) 644 $(DISTVNAME).tar$(SUFFIX)'},
+   'PREREQ_PM' => {'Tk'             => 402.002,
+		   'Data::Dumper'   => 2.08,
+		   'Tk::FileDialog' => 0,
+		   'Tk::Pod'        => 0,
+		  },
   );

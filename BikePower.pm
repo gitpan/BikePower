@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5 1997/11/19 01:13:45 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.3 1998/05/22 19:05:26 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -22,7 +22,7 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 	    $VERSION
  	   );
 
-$VERSION = "0.11";
+$VERSION = '0.13';
 
 # Conversion factors
 $m_s__per__mi_h         = 0.44704; # meters/second per miles/hour
@@ -196,7 +196,7 @@ sub set_values {
 }
 
 sub _default_filename {
-    my $home = (getpwuid($<))[7] || $ENV{'HOME'} || '/';
+    my $home = eval { (getpwuid($<))[7] } || $ENV{'HOME'} || '';
     $home . ($^O eq 'MSWin32' ? "/bikepwr.pl" : "/.bikepower.pl");
 }
 
@@ -470,83 +470,129 @@ sub tk_interface {
     require FindBin;
     push(@INC, $FindBin::Bin);
 
+    my $entry = 'Entry';
+    eval { require Tk::NumEntry;
+	   Tk::NumEntry->VERSION(1.02);
+	   require Tk::NumEntryPlain;
+	   Tk::NumEntryPlain->VERSION(0.05);
+       };
+    if (!$@) { $entry = 'NumEntry' }
+
+    my $automatic = 0;
+
     my $top = $parent->Toplevel(-title => 'Bikepower');
     $self->{'_top'} = $top;
     push(@tk_interfaces, $top);
 
     $top->optionAdd("*font" => '-*-helvetica-medium-r-*-14-*',
-		    'userDefault');
+		    'startupFile');
 
     my $menuframe = $top->Frame(-relief => 'raised',
 				-borderwidth => 2,
 			       );
 
-    my $mb_file = $menuframe->Menubutton(-text => 'File');
+    my $mb_file = $menuframe->Menubutton(-text => 'File',
+					 -underline => 0);
     $mb_file->pack(-side => 'left');
     $mb_file->command(-label => 'New',
+		      -underline => 0,
  		      -command => sub { my $bp = new BikePower;
 					$bp->tk_interface($parent) });
     $mb_file->command(-label => 'Clone',
+		      -underline => 1,
  		      -command => sub { my $bp = clone BikePower $self;
 					$bp->tk_interface($parent) });
     $mb_file->command(-label => 'Close',
+		      -underline => 0,
  		      -command => sub { $top->destroy });
 
-    my $mb_set = $menuframe->Menubutton(-text => 'Settings');
+    my $mb_set = $menuframe->Menubutton(-text => 'Settings',
+					-underline => 0);
     $mb_set->pack(-side => 'left');
     $mb_set->command(-label => 'Load defaults',
+		     -underline => 5,
 		     -command => sub { $self->load_defaults });
     $mb_set->command(-label => 'Load...',
+		     -underline => 0,
 		     -command => sub {
-			 require Tk::FileDialog;
-			 $self->{'_load_fd'} =
-			   $top->FileDialog(-Create => 0,
-					    -ShowAll => 1,
-					    -FPat => "*.pl");
-			 my $file = $self->{'_load_fd'}->Show;
-			 if ($file) {
+			 my $file;
+			 eval { 
+			     $file = $top->getOpenFile
+			       (-defaultextension => '*.pl');
+			 };
+			 if ($@) {
+			     require Tk::FileDialog;
+			     $self->{'_load_fd'} =
+			       $top->FileDialog(-Create => 0,
+						-ShowAll => 1,
+						-FPat => "*.pl");
+			     $file = $self->{'_load_fd'}->Show;
+			 }
+			 if (defined $file) {
 			     $self->load_defaults($file);
 			 }
 		     });
     $mb_set->command(-label => 'Save as default',
+		     -underline => 5,
 		     -command => sub { $self->save_defaults });
     $mb_set->command(-label => 'Save as...',
+		     -underline => 0,
 		     -command => sub {
-			 require Tk::FileDialog;
-			 $self->{'_save_fd'} = 
-			   $top->FileDialog(-Create => 1,
-					    -ShowAll => 1,
-					    -FPat => "*.pl");
-			 my $file = $self->{'_save_fd'}->Show;
-			 if ($file) {
-			     if ($file !~ /\.pl$/) {
-				 $file .= ".pl";
+			 my $file;
+			 eval { 
+			     $file = $top->getSaveFile
+			       (-defaultextension => '*.pl');
+			 };
+			 if ($@) {
+			     require Tk::FileDialog;
+			     $self->{'_save_fd'} = 
+			       $top->FileDialog(-Create => 1,
+						-ShowAll => 1,
+						-FPat => "*.pl");
+			     $file = $self->{'_save_fd'}->Show;
+			     if ($file) {
+				 if ($file !~ /\.pl$/) {
+				     $file .= ".pl";
+				 }
+				 if (-e $file) {
+				     require Tk::Dialog;
+				     my $d = $top->Dialog
+				       (-title => 'Warning',
+					-text  => 'Overwrite existing file <'
+					. $file . '>?',
+					-default_button => 'No',
+					-buttons => ['Yes', 'No'],
+					-popover => 'cursor');
+				     return if $d->Show ne 'Yes';
+				 }
 			     }
-			     if (-e $file) {
-				 require Tk::Dialog;
-				 my $d = $top->Dialog
-				   (-title => 'Warning',
-				    -text  => 'Overwrite existing file <'
-				    . $file . '>?',
-				    -default_button => 'No',
-				    -buttons => ['Yes', 'No'],
-				    -popover => 'cursor');
-				 return if $d->Show ne 'Yes';
-			     }
+			 }
+			 if (defined $file) {
 			     $self->save_defaults($file);
 			 }
 		     });
 
-    my $mb_help = $menuframe->Menubutton(-text => 'Help');
+    my $mb_help = $menuframe->Menubutton(-text => 'Help',
+					 -underline => 0);
     $mb_help->pack(-side => 'right');
     $mb_help->command(-label => 'About...',
+		      -underline => 0,
+		      -command => sub { 
+			  require Tk::Dialog;
+			  $top->Dialog(-text =>
+				       "BikePower.pm $VERSION\n" .
+				       "(c) 1997,1998 Slaven Rezic")->Show;
+		      },
+		     );
+    $mb_help->command(-label => 'Reference...',    
+		      -underline => 0,
 		      -command => sub { 
 			  require Tk::Pod;
 			  Tk::Pod->Dir($FindBin::Bin);
-			  $top->Pod(-file => "$FindBin::Script");
+			  $top->Pod(-file => 'BikePower.pm');
 		      });
 
-    $menuframe->pack(-expand => 1, -fill => 'x');
+    $menuframe->pack(-fill => 'x');
 
     my $f = $top->Frame->pack;
     my $b = $f->Balloon;
@@ -564,38 +610,55 @@ sub tk_interface {
 
     my $row = 0;
 
-    sub _labentry {
-	my($top, $row, $text, $varref, $unit, $choices) = @_;
+    my $calc_button;
+    my $autocalc = sub {
+	$calc_button->invoke if $automatic;
+    };
+
+    my $labentry = sub {
+	my($top, $row, $text, $varref, $unit, %a) = @_;
+	my $entry = ($a{-forceentry} ? 'Entry' : $entry);
 	$top->Label(-text => $text)->grid(-row => $row,
 					  -column => 0,
 					  -sticky => 'w');
-	if (defined $choices) {
+	my $w;
+	if (exists $a{-choices}) {
 	    require Tk::BrowseEntry;
-	    my $b = $top->BrowseEntry(-variable => $varref
-				     )->grid(-row => $row,
-					     -column => 1,
-					     -sticky => 'w');
-	    foreach (@$choices) {
-		$b->insert("end", $_);
-	    }
+	    $w = $top->BrowseEntry(-variable => $varref,
+				   ($Tk::VERSION >= 800
+				    ? (-browsecmd => $autocalc)
+				    : ()
+				   ),
+				  )->grid(-row => $row,
+					  -column => 1,
+					  -sticky => 'w');
+	    $w->insert("end", @{$a{-choices}});
 	} else {
-	    $top->Entry(-textvariable => $varref)->grid(-row => $row,
-							-column => 1,
-							-sticky => 'w');
+	    $w = $top->$entry(-textvariable => $varref,
+			      ($entry eq 'NumEntry' && exists $a{-resolution}
+			       ? (-resolution => $a{-resolution})
+			       : ()
+			      ),
+			     )->grid(-row => $row,
+				     -column => 1,
+				     -sticky => 'w');
 	}
+	$w->bind('<FocusOut>' => $autocalc);
 	if (defined $unit) {
 	    $top->Label(-text => $unit)->grid(-row => $row,
 					      -column => 2,
 					      -sticky => 'w');
 	}
-    }
+    };
 
-    _labentry($f, $row, 'Temperature:', \$self->{'T_a'}, '°C'); $row++;
+    &$labentry($f, $row, 'Temperature:', \$self->{'T_a'}, '°C'); $row++;
 
-    _labentry($f, $row, 'Velocity of headwind:', \$self->{'H'}, 'm/s');
+    &$labentry($f, $row, 'Velocity of headwind:', \$self->{'H'}, 'm/s');
     if (defined $icons{'change_wind'}) {
  	my $btn = $f->Button(-image => $icons{'change_wind'},
-			     -command => sub { $self->{'H'} = -$self->{'H'} },
+			     -command => sub { $self->{'H'} = -$self->{'H'};
+					       &$autocalc;
+					   },
 			    )->grid(-row => $row,
 				    -column => 3,
 				    -sticky => 'w',
@@ -605,16 +668,20 @@ sub tk_interface {
     $row++;
     $f->Checkbutton(-text => 'Crosswind',
 		    -variable => \$self->{'cross_wind'},
+		    -command => $autocalc,
 		   )->grid(-row => $row,
 			   -column => 0,
 			   -sticky => 'w',
 			   -ipady => 0,
 			  ); $row++;
 
-    _labentry($f, $row, 'Grade of hill:', \$self->{'G'}, 'm/m');
+    &$labentry($f, $row, 'Grade of hill:', \$self->{'G'}, 'm/m',
+	       -resolution => 0.01);
     if (defined $icons{'up_down'}) {
  	my $btn =$f->Button(-image => $icons{'up_down'},
-			    -command => sub { $self->{'G'} = -$self->{'G'} },
+			    -command => sub { $self->{'G'} = -$self->{'G'};
+					      &$autocalc;
+					  },
 			   )->grid(-row => $row,
 				   -column => 3,
 				   -sticky => 'w',
@@ -631,8 +698,8 @@ sub tk_interface {
        '0.2674709 (full downhill tuck)',
        '0.2213353 (end of pack of 1 or more riders)',
        '0.1844627 (in the middle of a pack)');
-    _labentry($f, $row, '', \$self->{'A_c'}, 'm^2',
-	      \@std_a_c);
+    &$labentry($f, $row, '', \$self->{'A_c'}, 'm^2',
+	       -choices => \@std_a_c);
     my $ac_frame = $f->Frame(-relief => 'raised',
 			     -borderwidth => 2)->grid(-row => $row,
 						      -column => 0,
@@ -649,27 +716,33 @@ sub tk_interface {
 	    $ac_menu->command((defined $icons{$_}
 			       ? (-image => $icons{$_})
 			       : (-label => $_)),
-			      -command => sub { $self->{'A_c'} = $std_a_c[$i] });
+			      -command => sub { $self->{'A_c'} = $std_a_c[$i];
+						&$autocalc;
+					    });
 	}
 	$i++;
     }
 
-    _labentry($f, $row, 'Transmission efficiency:', \$self->{'T'}); $row++;
-    _labentry($f, $row, 'Rolling friction:', \$self->{'R'}, undef,
-	      ['0.004  (narrow tubular tires, lowest)',
-	       '0.0047 (26 x 1.125 inch tires)',
-	       '0.0051 (27 x 1.25 inch tires)',
-	       '0.0055 (narrow tubular tires, highest)',
-	       '0.0066 (26 x 1.375)',
-	       '0.0120 (mountain bike tires)']
-	     ); $row++;
-    _labentry($f, $row, 'Weight of cyclist:', \$self->{'Wc'}, 'kg'); $row++;
-    _labentry($f, $row, 'Weight of bike+clothes:', \$self->{'Wm'}, 'kg'); $row++;
+    &$labentry($f, $row, 'Transmission efficiency:', \$self->{'T'}, undef,
+	       -resolution => 0.01); $row++;
+    &$labentry($f, $row, 'Rolling friction:', \$self->{'R'}, undef,
+	       -choices =>
+	       ['0.004  (narrow tubular tires, lowest)',
+		'0.0047 (26 x 1.125 inch tires)',
+		'0.0051 (27 x 1.25 inch tires)',
+		'0.0055 (narrow tubular tires, highest)',
+		'0.0066 (26 x 1.375)',
+		'0.0120 (mountain bike tires)']
+	      ); $row++;
+    &$labentry($f, $row, 'Weight of cyclist:', \$self->{'Wc'}, 'kg');
+    $row++;
+    &$labentry($f, $row, 'Weight of bike+clothes:', \$self->{'Wm'}, 'kg');
+    $row++;
     
     my $res_frame = $top->Frame(-bg => 'yellow')->pack(-fill => 'x',
 						       -ipady => 5);
-    $res_frame->optionAdd("*" . $res_frame->name . "*background" => 'yellow',
-			  'userDefault');
+    $res_frame->optionAdd('*' . substr($res_frame->PathName, 1) . "*background"
+			  => 'yellow', 'userDefault');
     $row = 0;
     $res_frame->Label(-text => 'Resolve for:')->grid(-row => $row,
 						     -column => 0,
@@ -679,74 +752,100 @@ sub tk_interface {
     $b->attach($first_label, -msg => 'first value in table');
     $res_frame->Label(-text => 'increment')->grid(-row => $row,
 						  -column => 2);
+
+    my $w;
+
     $row++;
     $res_frame->Radiobutton(-text => 'velocity',
 			    -variable => \$self->{'given'},
-			    -value => 'v')->grid(-row => $row,
-						 -column => 0,
-						 -sticky => 'w');
-    $res_frame->Entry(-textvariable => \$self->{'first_V'},
-		      -width => 8,
-		     )->grid(-row => $row,
-			     -column => 1,
-			     -sticky => 'w');
-    $res_frame->Entry(-textvariable => \$self->{'V_incr'},
-		      -width => 8,
-		     )->grid(-row => $row,
-			     -column => 2,
-			     -sticky => 'w');
+			    -value => 'v',
+			    -command => $autocalc,
+			   )->grid(-row => $row,
+				   -column => 0,
+				   -sticky => 'w');
+    $w = $res_frame->$entry(-textvariable => \$self->{'first_V'},
+			    -width => 8,
+			   )->grid(-row => $row,
+				   -column => 1,
+				   -sticky => 'w');
+    $w->bind('<FocusOut>' => $autocalc);
+    $w = $res_frame->$entry(-textvariable => \$self->{'V_incr'},
+			    -width => 8,
+			   )->grid(-row => $row,
+				   -column => 2,
+				   -sticky => 'w');
+    $w->bind('<FocusOut>' => $autocalc);
     $row++;
     $res_frame->Radiobutton(-text => 'power',
 			    -variable => \$self->{'given'},
-			    -value => 'P')->grid(-row => $row,
-						 -column => 0,
-						 -sticky => 'w');
-    $res_frame->Entry(-textvariable => \$self->{'first_P'},
-		      -width => 8,
-		     )->grid(-row => $row,
-			     -column => 1,
-			     -sticky => 'w');
-    $res_frame->Entry(-textvariable => \$self->{'P_incr'},
-		      -width => 8,
-		     )->grid(-row => $row,
-			     -column => 2,
-			     -sticky => 'w');
+			    -value => 'P',
+			    -command => $autocalc,
+			   )->grid(-row => $row,
+				   -column => 0,
+				   -sticky => 'w');
+    $w = $res_frame->$entry(-textvariable => \$self->{'first_P'},
+			    -width => 8,
+			   )->grid(-row => $row,
+				   -column => 1,
+				   -sticky => 'w');
+    $w->bind('<FocusOut>' => $autocalc);
+    $w = $res_frame->$entry(-textvariable => \$self->{'P_incr'},
+			    -width => 8,
+			   )->grid(-row => $row,
+				   -column => 2,
+				   -sticky => 'w');
+    $w->bind('<FocusOut>' => $autocalc);
     $row++;
     $res_frame->Radiobutton(-text => 'consumption',
 			    -variable => \$self->{'given'},
-			    -value => 'C')->grid(-row => $row,
-						 -column => 0,
-						 -sticky => 'w');
-    $res_frame->Entry(-textvariable => \$self->{'first_C'},
-		      -width => 8,
-		     )->grid(-row => $row,
-			     -column => 1,
-			     -sticky => 'w');
-    $res_frame->Entry(-textvariable => \$self->{'C_incr'},
-		      -width => 8,
-		     )->grid(-row => $row,
-			     -column => 2,
-			     -sticky => 'w');
+			    -value => 'C',
+			    -command => $autocalc,
+			   )->grid(-row => $row,
+				   -column => 0,
+				   -sticky => 'w');
+    $w = $res_frame->$entry(-textvariable => \$self->{'first_C'},
+			    -width => 8,
+			   )->grid(-row => $row,
+				   -column => 1,
+				   -sticky => 'w');
+    $w->bind('<FocusOut>' => $autocalc);
+    $w = $res_frame->$entry(-textvariable => \$self->{'C_incr'},
+			    -width => 8,
+			   )->grid(-row => $row,
+				   -column => 2,
+				   -sticky => 'w');
+    $w->bind('<FocusOut>' => $autocalc);
     $row++;
-    my $calc_button = $res_frame->Button
+    $calc_button = $res_frame->Button
       (-text => 'Calc!',
        -fg => 'white',
        -bg => 'red',
-       -command => sub { $self->tk_output }
-      )->grid(-row => 0,
-	      -rowspan => 3,
+       -command => sub { $self->tk_output },
+      )->grid(-row => 1,
+	      -rowspan => 2,
 	      -column => 5,
 	      -padx => 5);
-    $top->bind($top, "<Return>" => sub { $calc_button->invoke });
+    $top->bind($top, "<Return>" => $autocalc);
     $b->attach($calc_button, -msg => 'start calculation');
 
-    my $output_frame = $top->Frame(-bg => '#ffdead')->pack;
-    my $output_frame_name = $output_frame->name;
-    $output_frame->optionAdd("*" . $output_frame_name . "*background" 
+    my $auto_calc_check = $res_frame->Checkbutton
+      (-text => 'automatic',
+       -variable => \$automatic,
+       -command => sub {
+	   $calc_button->invoke if $automatic;
+       },
+      )->grid(-row => 3,
+	      -column => 5,
+	      -padx => 5);
+    $b->attach($auto_calc_check,
+	       -msg => 'immediate calculation when values change');
+    my $output_frame = $top->Frame(-bg => '#ffdead')->pack(-fill => 'x');
+    my $output_frame_name = '*' . substr($output_frame->PathName, 1);
+    $output_frame->optionAdd($output_frame_name . "*background" 
 			     => '#ffdead', 'userDefault');
-    $output_frame->optionAdd("*" . $output_frame_name . "*relief" 
+    $output_frame->optionAdd($output_frame_name . "*relief" 
 			     => 'ridge', 'userDefault');
-    $output_frame->optionAdd("*" . $output_frame_name . "*borderWidth" 
+    $output_frame->optionAdd($output_frame_name . "*borderWidth" 
 			     => 1, 'userDefault');
     my $col = 0;
     my $v_label = $output_frame->Label(-text => 'v',
@@ -816,15 +915,18 @@ sub tk_interface {
     $b->attach($kJh_label, -msg => #'total power consumption [kJ/h]'
 	       'total power consumption [cal/h]');
 
-    my $entry;
-    for($entry = 0; $entry < $self->{'N_entry'}; $entry++) {
-	$col = 0;
-	my $out;
-	foreach $out (@out) {
-	    $self->{'_lab'}{$out}->[$entry] = $output_frame->Label;
-	    $self->{'_lab'}{$out}->[$entry]->grid(-row => 1 + $entry,
-						  -column => $col,
-						  -sticky => 'ew'); $col++;
+    {
+	my $entry;
+	for($entry = 0; $entry < $self->{'N_entry'}; $entry++) {
+	    $col = 0;
+	    my $out;
+	    foreach $out (@out) {
+		$self->{'_lab'}{$out}->[$entry] = $output_frame->Label;
+		$self->{'_lab'}{$out}->[$entry]->grid
+		  (-row => 1 + $entry,
+		   -column => $col,
+		   -sticky => 'ew'); $col++;
+	    }
 	}
     }
 
@@ -868,7 +970,7 @@ Slaven Rezic (eserte@cs.tu-berlin.de)
 Original program bike_power.c by Ken Roberts (roberts@cs.columbia.edu),
 Dept of Computer Science, Columbia University, New York.
 
-Copyright (c) 1997 Slaven Rezic. All rights reserved.
+Copyright (c) 1997,1998 Slaven Rezic. All rights reserved.
 This package is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
