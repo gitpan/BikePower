@@ -3,6 +3,7 @@
 BEGIN { $| = 1; print "1..5\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use BikePower;
+use BikePower::Tk;
 $loaded = 1;
 print "ok 1\n";
 
@@ -59,3 +60,11 @@ if (sprintf("%.1f", $o->velocity*3.6) ne "29.3") {
 }
 print "ok 5\n";
 
+eval {
+    use Tk;
+    $top = new MainWindow;
+    $t = $o->tk_interface($top);
+    $top->update;
+    $top->destroy;
+    print "ok 6\n"; # XXX 
+};

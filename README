@@ -2,7 +2,7 @@ README
 ------
 
 This is BikePower, a re-port of the original "bike_power" program by
-Ken Roberts.
+Ken Roberts and Mark Grennan.
 
 From the original description:
 
@@ -17,8 +17,9 @@ Requirements
 You need a modern perl (e.g. perl5.004 but older versions may work
 too). If you want to use the Tk interface (and that's the only reason
 why bother with this module), you need also Tk402.202. The modules
-Data-Dumper and Tk-Pod are optional. All of these may be found at a CPAN site,
-e.g. ftp://ftp.cs.tu-berlin.de/pub/lang/perl/CPAN/.
+Data-Dumper (anyway standard in perl5.005) and Tk-Pod are optional.
+All of these may be found at a CPAN site, e.g.
+ftp://ftp.cs.tu-berlin.de/pub/lang/perl/CPAN/.
 
 Installation
 

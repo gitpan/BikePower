@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Tk.pm,v 1.1 1998/06/29 18:08:43 eserte Exp $
+# $Id: Tk.pm,v 1.2 1998/12/12 12:38:36 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see BikePower.pm
@@ -43,7 +43,7 @@ sub set_lang {
 package BikePower::Tk;
 use BikePower;
 use vars qw($VERSION @tk_interfaces %icons);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 # language strings
 my $lang_s =
@@ -74,13 +74,13 @@ my $lang_s =
     'Crosswind' => 'Seitenwind',
     'Grade of hill' => 'Steigung',
     'toggle up and down hill' => 'zwischen Steigung und Gefälle umschalten',
-    'standing' => 'stehend',
-    'upright' => 'aufrecht',
-    'crouch' => 'geduckt',
-    'racing crouch' => 'geduckt (Rennstellung (?))',
-    'full downhill tuck' => 'Abfahrtshaltung (?)',
-    'end of pack of 1 or more riders' => 'am Ende eines Verbandes',
-    'in the middle of a pack' => 'in der Mitte eines Verbandes',
+#     'standing' => 'stehend',
+#     'upright' => 'aufrecht',
+#     'crouch' => 'geduckt',
+#     'racing crouch' => 'geduckt (Rennstellung (?))',
+#     'full downhill tuck' => 'Abfahrtshaltung (?)',
+#     'end of pack of 1 or more riders' => 'am Ende eines Verbandes',
+#     'in the middle of a pack' => 'in der Mitte eines Verbandes',
     'Frontal area' => 'Vorderfläche (?)',
     'set air resistance' => 'Luftwiderstand setzen',
     'Transmission efficiency' => 'Effizienz der Übertragung',
@@ -122,12 +122,26 @@ sub tk_output {
     }
 }
 
+sub load_air_resistance_icons {
+    my $f = shift;
+    my $air_r;
+    foreach $air_r (keys %BikePower::air_resistance) {
+	if (!defined $Bikepower::air_resistance{$air_r}->{'icon'}) {
+	    eval {
+		$BikePower::air_resistance{$air_r}->{'icon'} =
+		  $f->MainWindow->Pixmap(-file =>
+					 Tk::findINC("BikePower/$air_r.xpm"));
+	    };
+	}
+    }
+}
 
 sub tk_interface {
     my($self, $parent, %args) = @_;
 
+    my $lang = $args{'-lang'} || 'en';
     my %s;
-    tie %s, 'Tie::Lang', $lang_s, $args{'-lang'} || 'en';
+    tie %s, 'Tie::Lang', $lang_s, $lang;
 
     require Tk::Balloon;
     require FindBin;
@@ -267,16 +281,18 @@ sub tk_interface {
     $menuframe->pack(-fill => 'x');
 
     my $f = $top->Frame->pack;
-    my $b = $f->Balloon;
+    my $balloon = $f->Balloon;
 
-    my $icon;
-    foreach $icon ('crouch', 'pack_end', 'pack_middle', 'racing', 'standing',
-		   'tuck', 'upright', 'up_down', 'change_wind') {
-	if (!defined $icons{$icon}) {
-	    eval { 
-		$icons{$icon} =
-		  $f->Pixmap(-file => Tk::findINC("BikePower/$icon.xpm"));
-	    };
+    load_air_resistance_icons($f);
+    {
+	my $icon;
+	foreach $icon ('up_down', 'change_wind') {
+	    if (!defined $icons{$icon}) {
+		eval { 
+		    $icons{$icon} =
+		      $f->Pixmap(-file => Tk::findINC("BikePower/$icon.xpm"));
+		};
+	    }
 	}
     }
 
@@ -308,6 +324,7 @@ sub tk_interface {
 	} else {
 	    $w = $top->$entry(-textvariable => $varref,
 			      ($entry eq 'NumEntry' && exists $a{-resolution}
+			       && $Tk::NumEntryPlain::VERSION > 999 # XXXX
 			       ? (-resolution => $a{-resolution})
 			       : ()
 			      ),
@@ -337,7 +354,7 @@ sub tk_interface {
 				    -column => 3,
 				    -sticky => 'w',
 				    -padx => 3);
-	$b->attach($btn, -msg => $s{'toggle headwind and backwind'});
+	$balloon->attach($btn, -msg => $s{'toggle headwind and backwind'});
     }
     $row++;
     $f->Checkbutton(-text => $s{'Crosswind'},
@@ -360,41 +377,47 @@ sub tk_interface {
 				   -column => 3,
 				   -sticky => 'w',
 				   -padx => 3);
-	$b->attach($btn, -msg => $s{'toggle up and down hill'});
+	$balloon->attach($btn, -msg => $s{'toggle up and down hill'});
     }
     $row++;
 
     my @std_a_c =
-      ('0.6566873 (' . $s{'standing'} . ')',
-       '0.4925155 (' . $s{'upright'} . ')',
-       '0.4297982 (' . $s{'crouch'} . ')',
-       '0.3080527 (' . $s{'racing crouch'} . ')',
-       '0.2674709 (' . $s{'full downhill tuck'} . ')',
-       '0.2213353 (' . $s{'end of pack of 1 or more riders'} . ')',
-       '0.1844627 (' . $s{'in the middle of a pack'} . ')');
-    &$labentry($f, $row, '', \$self->{'A_c'}, 'm^2',
+      map { $BikePower::air_resistance{$_}->{'A_c'} . " (" .
+	      $BikePower::air_resistance{$_}->{"text_$lang"}
+	    . ")"
+	} @BikePower::air_resistance_order;
+    &$labentry($f, $row, '', \$self->{'A_c'}, 'm²',
 	       -choices => \@std_a_c);
     my $ac_frame = $f->Frame(-relief => 'raised',
 			     -borderwidth => 2)->grid(-row => $row,
 						      -column => 0,
 						      -sticky => 'w'); $row++;
-    my $ac_menu = $ac_frame->Menubutton(-text => $s{'Frontal area'} . ':',
+    my $ac_mb = $ac_frame->Menubutton(-text => $s{'Frontal area'} . ':',
 					-padx => 0,
 					-pady => 0)->pack;
-    $b->attach($ac_menu, -msg => $s{'set air resistance'});
-    my $i = 0;
-    foreach ('standing', 'upright', 'crouch', 'racing',
-	     'tuck', 'pack_end', 'pack_middle') {
-	{
-	    my $i = $i; # wegen des Closures...
-	    $ac_menu->command((defined $icons{$_}
-			       ? (-image => $icons{$_})
-			       : (-label => $_)),
-			      -command => sub { $self->{'A_c'} = $std_a_c[$i];
-						&$autocalc;
-					    });
+    $balloon->attach($ac_mb, -msg => $s{'set air resistance'});
+    {
+	my $i = 0;
+	my $air_r;
+	foreach $air_r (@BikePower::air_resistance_order) {
+	    {
+		my $i = $i; # wegen des Closures...
+		my $icon = $BikePower::air_resistance{$air_r}->{'icon'};
+		$ac_mb->command
+		  ((defined $icon ? (-image => $icon) : (-label => $air_r)),
+		   -command => sub { $self->{'A_c'} = $std_a_c[$i];
+				     &$autocalc;
+				 });
+	    }
+	    $i++;
 	}
-	$i++;
+	if ($Tk::VERSION >= 800.010) {
+	    $balloon->attach
+	      ($ac_mb->cget(-menu),
+	       -msg => ['',
+			map { $BikePower::air_resistance{$_}->{"text_$lang"} }
+			@BikePower::air_resistance_order]);
+	}
     }
 
     &$labentry($f, $row, $s{'Transmission efficiency'} . ':',
@@ -428,7 +451,7 @@ sub tk_interface {
     my $first_label = $res_frame->Label(-text => $s{'first'}
 				       )->grid(-row => $row,
 					       -column => 1);
-    $b->attach($first_label, -msg => $s{'first value in table'});
+    $balloon->attach($first_label, -msg => $s{'first value in table'});
     $res_frame->Label(-text => $s{'increment'})->grid(-row => $row,
 							-column => 2);
 
@@ -505,7 +528,7 @@ sub tk_interface {
 	      -column => 5,
 	      -padx => 5);
     $top->bind($top, "<Return>" => $autocalc);
-    $b->attach($calc_button, -msg => $s{'start calculation'});
+    $balloon->attach($calc_button, -msg => $s{'start calculation'});
 
     my $auto_calc_check = $res_frame->Checkbutton
       (-text => $s{'automatic'},
@@ -516,7 +539,7 @@ sub tk_interface {
       )->grid(-row => 3,
 	      -column => 5,
 	      -padx => 5);
-    $b->attach($auto_calc_check,
+    $balloon->attach($auto_calc_check,
 	       -msg => $s{'immediate calculation when values change'});
     my $output_frame = $top->Frame(-bg => '#ffdead')->pack(-fill => 'x');
     my $output_frame_name = '*' . substr($output_frame->PathName, 1);
@@ -531,67 +554,67 @@ sub tk_interface {
 				       -width => 5,
 				      )->grid(-row => 0,
 					      -column => $col); $col++;
-    $b->attach($v_label, -msg => $s{'velocity'} . ' [km/h]');
+    $balloon->attach($v_label, -msg => $s{'velocity'} . ' [km/h]');
     my $F_label = $output_frame->Label(-text => 'F',
 				       -width => 4,
 				      )->grid(-row => 0,
 					      -column => $col); $col++;
-    $b->attach($F_label, -msg => 'total force resisting forward motion [kg]');
+    $balloon->attach($F_label, -msg => 'total force resisting forward motion [kg]');
     my $Pa_label = $output_frame->Label(-text => 'Pa',
 					-width => 4,
 				       )->grid(-row => 0,
 					       -column => $col); $col++;
-    $b->attach($Pa_label,
+    $balloon->attach($Pa_label,
 	       -msg => 'power output to overcome air resistance [W]');
     my $Pr_label = $output_frame->Label(-text => 'Pr',
 					-width => 4,
 				       )->grid(-row => 0,
 					       -column => $col); $col++;
-    $b->attach($Pr_label,
+    $balloon->attach($Pr_label,
 	       -msg => 'power output to overcome rolling friction [W]');
     my $Pg_label = $output_frame->Label(-text => 'Pg',
 					-width => 5,
 				       )->grid(-row => 0,
 					       -column => $col); $col++;
-    $b->attach($Pg_label, -msg => 'power output to climb grade [W]');
+    $balloon->attach($Pg_label, -msg => 'power output to climb grade [W]');
     my $Pt_label = $output_frame->Label(-text => 'Pt',
 					-width => 4,
 				       )->grid(-row => 0,
 					       -column => $col); $col++;
-    $b->attach($Pt_label,
+    $balloon->attach($Pt_label,
 	       -msg => 'power loss due to drivetrain inefficiency [W]');
     my $P_label = $output_frame->Label(-text => 'P',
 				       -width => 5,
 				      )->grid(-row => 0,
 					      -column => $col); $col++;
-    $b->attach($P_label, -msg => 'total power output [W]');
+    $balloon->attach($P_label, -msg => 'total power output [W]');
     my $hp_label = $output_frame->Label(-text => 'hp',
 					-width => 5,
 				       )->grid(-row => 0,
 					       -column => $col); $col++;
-    $b->attach($hp_label, -msg => 'total power output [hp]');
+    $balloon->attach($hp_label, -msg => 'total power output [hp]');
     my $heat_label = $output_frame->Label(-text => 'heat',
 					  -width => 5,
 					 )->grid(-row => 0,
 						 -column => $col); $col++;
-    $b->attach($heat_label,
+    $balloon->attach($heat_label,
 	       -msg => 'power wasted due to human inefficiency [W]');
     my $BM_label = $output_frame->Label(-text => 'BM',
 					-width => 3,
 				       )->grid(-row => 0,
 					       -column => $col); $col++;
-    $b->attach($BM_label, -msg => 'basal metabolism [W]');
+    $balloon->attach($BM_label, -msg => 'basal metabolism [W]');
     my $C_label = $output_frame->Label(-text => 'C',
 				       -width => 5,
 				      )->grid(-row => 0,
 					      -column => $col); $col++;
-    $b->attach($C_label, -msg => 'total power consumption [W]');
+    $balloon->attach($C_label, -msg => 'total power consumption [W]');
     my $kJh_label = $output_frame->Label(#-text => 'kJ/h',
 					 -text => 'cal/h',
 					 -width => 5,
 					)->grid(-row => 0,
 						-column => $col); $col++;
-    $b->attach($kJh_label, -msg => #'total power consumption [kJ/h]'
+    $balloon->attach($kJh_label, -msg => #'total power consumption [kJ/h]'
 	       'total power consumption [cal/h]');
 
     {

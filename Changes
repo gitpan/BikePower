@@ -1,5 +1,9 @@
 Revision history for Perl extension BikePower.
 
+0.16
+	- POD additions
+	- minor fixes
+
 0.15
 	- bugfix (missing _init_output)
 	- new README, improved test.pl

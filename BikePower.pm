@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5.1.5 1998/07/28 19:50:28 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.6 1998/12/12 12:39:19 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -19,10 +19,11 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 	    $Watts__per__Cal_hr $Watts__per__horsepower
 	    $NOSAVE
 	    @out %fmt @air_density %members
+	    %air_resistance @air_resistance_order
 	    $VERSION
  	   );
 
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 # Conversion factors
 $m_s__per__mi_h         = 0.44704; # meters/second per miles/hour
@@ -100,6 +101,41 @@ $NOSAVE = 1 << 0;
    'V'           => [['velocity'], undef, 'velocity in m/s', $NOSAVE],
    'C'           => [['consumption'], undef, 'consumption in Cal/hr', $NOSAVE],
   );
+
+%air_resistance =
+  (
+   'standing',   => {'A_c'     => 0.6566873,
+		     'text_en' => 'standing',
+		     'text_de' => 'stehend',
+		    },
+   'upright'     => {'A_c'     => 0.4925155,
+		     'text_en' => 'upright',
+		     'text_de' => 'aufrecht',
+		    },
+   'crouch'      => {'A_c'     => 0.4297982,
+		     'text_en' => 'crouch',
+		     'text_de' => 'geduckt',
+		    },
+   'racing'      => {'A_c'     => 0.3080527,
+		     'text_en' => 'racing crouch',
+		     'text_de' => 'geduckt in Rennstellung (?)',
+		    },
+   'tuck'        => {'A_c'     => 0.2674709,
+		     'text_en' => 'full downhill tuck',
+		     'text_de' => 'Abfahrtshaltung (?)',
+		    },
+   'pack_end'    => {'A_c'     => 0.2213353,
+		     'text_en' => 'end of pack of 1 or more riders',
+		     'text_de' => 'am Ende eines Verbandes',
+		    },
+   'pack_middle' => {'A_c'     => 0.1844627,
+		     'text_en' => 'in the middle of a pack',
+		     'text_de' => 'in der Mitte eines Verbandes',
+		    },
+  );
+@air_resistance_order = sort { $air_resistance{$b}->{A_c} <=>
+				 $air_resistance{$a}->{A_c}
+			   } keys %air_resistance;
 
 my $member;
 my $i=0;
@@ -473,7 +509,14 @@ or
 
 =head1 DESCRIPTION
 
-XXX
+B<BikePower> calculates power output and power consumption for
+bicycling. You give it things like riding speed, body weight, hill
+grade, and wind speed. The module returns power output and power
+consumption, broken out in various ways.
+
+This module is meant for inclusion in own programs. There are two perl
+scripts in the distribution, B<bikepwr> and B<tkbikepwr>, for use as
+stand-alone programs.
 
 =head1 CONSTRUCTOR
 
@@ -610,21 +653,53 @@ Calculate and print a table with the supplied values.
 
 =back
 
+=head1 INI FILE
+
+The easiest way to create the ini file is to use B<tkbikepwr> and
+clicking on the menu item "Save as default". The ini file is evaled as
+a perl script and should contain the variable C<$x> as a reference to
+a hash. For example:
+
+    $x = {
+           'V_incr' => 2,
+           'C_a' => '0.9',
+           'A_c' => '0.4925155 (upright)',
+           'Wm' => 19,
+           'E' => '0.249',
+           'G' => '0',
+           'H' => '0',
+           'first_C' => 500,
+           'C_incr' => 100,
+           'A1' => '0',
+           'R' => '0.0066 (26 x 1.375)',
+           'T_a' => 20,
+           'T' => '0.95',
+           'first_P' => 50,
+           'given' => 'v',
+           'Wc' => 68,
+           'BM_rate' => '1.4',
+           'P_incr' => 50,
+           'cross_wind' => '0',
+           'first_V' => 16,
+           'N_entry' => 10
+         };
+
 =head1 TODO
 
     + better POD!
-    + E<uuml>berprE<uuml>fen, ob sich TiedListbox mit BrowseEntry
-      kombinieren lE<auml>E<szlig>t
-      (fE<uuml>r Luftwiderstand und ReifengrE<ouml>E<szlig>e)
-    - ME<ouml>glichkeit: mehrere Tk-Interfaces teilen sich Felder
-      (Checkbutton)
+
+=head1 SEE ALSO
+
+L<BikePower::Tk(3)|BikePower::Tk>, L<bikepwr(1)|bikepwr>,
+L<tkbikepwr(1)|tkbikepwr>
 
 =head1 AUTHOR
 
 Slaven Rezic (eserte@cs.tu-berlin.de)
 
-Original program bike_power.c by Ken Roberts (roberts@cs.columbia.edu),
-Dept of Computer Science, Columbia University, New York.
+Original program bike_power.c by Ken Roberts
+(roberts@cs.columbia.edu), Dept of Computer Science, Columbia
+University, New York and co-author Mark Grennan (markg@okcforum.org).
 
 Copyright (c) 1997,1998 Slaven Rezic. All rights reserved.
 This package is free software; you can redistribute it and/or
