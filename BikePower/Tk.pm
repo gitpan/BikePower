@@ -1,7 +1,7 @@
 # -*- perl -*-
 
 #
-# $Id: Tk.pm,v 1.4 1999/03/14 23:38:40 eserte Exp $
+# $Id: Tk.pm,v 1.5 1999/04/07 19:44:01 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see BikePower.pm
@@ -43,7 +43,7 @@ sub set_lang {
 package BikePower::Tk;
 use BikePower;
 use vars qw($VERSION @interfaces %icons);
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 # language strings
 my $lang_s =
@@ -344,7 +344,9 @@ sub tk_interface {
 	    $w = $top->$entry(-textvariable => $varref,
 			      ($entry eq 'NumEntry' && exists $a{-resolution}
 			       && $Tk::NumEntryPlain::VERSION > 999 # XXXX
-			       ? (-resolution => $a{-resolution})
+			       ? (-resolution => $a{-resolution},
+				  -command => $autocalc,
+				 )
 			       : ()
 			      ),
 			     )->grid(-row => $row,

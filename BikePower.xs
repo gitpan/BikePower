@@ -202,29 +202,29 @@ calcXS(self)
 	tmp = hv_fetch((HV*)SvRV(self), "_out", 4, 1);
 	if (!SvROK(*tmp) || SvTYPE(SvRV(*tmp)) != SVt_PVHV) {
 	  out = newHV();
-	  hv_store((HV*)SvRV(self), "_out", 4, newRV_inc((SV*)out), 1); /* inc oder noinc XXXX? */
+	  hv_store((HV*)SvRV(self), "_out", 4, newRV_inc((SV*)out), 0); /* inc oder noinc XXXX? */
 	} else {
 	  out = (HV*)SvRV(*tmp);
 	}
 
-	hv_store(out, "Pa", 2, sv_2mortal(newSVnv(V * F_a)),1);
-	hv_store(out, "Pr", 2, sv_2mortal(newSVnv(V * F_r)),1);
-	hv_store(out, "Pg", 2, sv_2mortal(newSVnv(V * F_g)),1);
-	hv_store(out, "Pt", 2, sv_2mortal(newSVnv(P_t)),1);
-	hv_store(out, "P",  1, sv_2mortal(newSVnv(power)),1);
-	hv_store(out, "hp", 2, sv_2mortal(newSVnv(power/SvNV(perl_get_sv("BikePower::Watts__per__horsepower",1)))),1);
-	hv_store(out, "heat", 4, sv_2mortal(newSVnv(consumption-(BM+power))),1);
-	hv_store(out, "C",  1,  sv_2mortal(newSVnv(consumption)),1);
-	hv_store(out, "B",  1,  sv_2mortal(newSVnv(BM)),1);
+	hv_store(out, "Pa", 2, newSVnv(V * F_a),0);
+	hv_store(out, "Pr", 2, newSVnv(V * F_r),0);
+	hv_store(out, "Pg", 2, newSVnv(V * F_g),0);
+	hv_store(out, "Pt", 2, newSVnv(P_t),0);
+	hv_store(out, "P",  1, newSVnv(power),0);
+	hv_store(out, "hp", 2, newSVnv(power/SvNV(perl_get_sv("BikePower::Watts__per__horsepower",1))),0);
+	hv_store(out, "heat", 4, newSVnv(consumption-(BM+power)),0);
+	hv_store(out, "C",  1,  newSVnv(consumption),0);
+	hv_store(out, "B",  1,  newSVnv(BM),0);
 	BIKEPOWER_ACCBOOL_VAR(imperial,imperial);
 	if (!imperial) {
 	  double velocity_kmh;
 	  BIKEPOWER_ACC(velocity_kmh,n);
-	  hv_store(out, "V", 1, sv_2mortal(newSVnv(velocity_kmh)),1);
-	  hv_store(out, "F", 1, sv_2mortal(newSVnv(SvNV(perl_get_sv("BikePower::kg__per__Nt",1))*F)),1);
-	  hv_store(out, "kJh", 3, sv_2mortal(newSVnv(consumption*SvNV(perl_get_sv("BikePower::Watts__per__Cal_hr",1)))),1); /* really Cal/hr */
+	  hv_store(out, "V", 1, newSVnv(velocity_kmh),0);
+	  hv_store(out, "F", 1, newSVnv(SvNV(perl_get_sv("BikePower::kg__per__Nt",1))*F),0);
+	  hv_store(out, "kJh", 3, newSVnv(consumption*SvNV(perl_get_sv("BikePower::Watts__per__Cal_hr",1))),0); /* really Cal/hr */
 	} else {
-	  hv_store(out, "V", 1, sv_2mortal(newSVnv(V)),1);
-	  hv_store(out, "F", 1, sv_2mortal(newSVnv(F/SvNV(perl_get_sv("BikePower::Nt__per__lb",1))*F)),1);
-	  hv_store(out, "kJh", 3, sv_2mortal(newSVnv(consumption*SvNV(perl_get_sv("BikePower::Watts__per__Cal_hr",1)))),1); /* really Cal/hr */
+	  hv_store(out, "V", 1, newSVnv(V),0);
+	  hv_store(out, "F", 1, newSVnv(F/SvNV(perl_get_sv("BikePower::Nt__per__lb",1))*F),0);
+	  hv_store(out, "kJh", 3, newSVnv(consumption*SvNV(perl_get_sv("BikePower::Watts__per__Cal_hr",1))),0); /* really Cal/hr */
 	}

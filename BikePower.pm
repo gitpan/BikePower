@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: BikePower.pm,v 2.5.1.11 1999/03/20 14:41:35 eserte Exp $
+# $Id: BikePower.pm,v 2.5.1.13 1999/04/07 19:43:47 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright: see at bottom of file
@@ -26,7 +26,7 @@ use vars qw($m_s__per__mi_h $m_s__per__km_h $Nt__per__lb $kg__per__Nt
 
 require DynaLoader;
 @ISA     = qw(DynaLoader);
-$VERSION = '0.31';
+$VERSION = '0.33';
 
 eval {
     bootstrap BikePower $VERSION;
@@ -768,7 +768,7 @@ Original program bike_power.c by Ken Roberts
 (roberts@cs.columbia.edu), Dept of Computer Science, Columbia
 University, New York and co-author Mark Grennan (markg@okcforum.org).
 
-Copyright (c) 1997,1998 Slaven Rezic. All rights reserved.
+Copyright (c) 1997,1998,1999 Slaven Rezic. All rights reserved.
 This package is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 

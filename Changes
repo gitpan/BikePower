@@ -1,5 +1,11 @@
 Revision history for Perl extension BikePower.
 
+0.33
+	- NumEntries call $autocalc subroutine
+
+0.32
+	- XS fix
+
 0.31
 	- fix for 5.005_55
 

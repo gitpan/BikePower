@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-BEGIN { $^W = 1; $| = 1; print "1..17\n"; }
+BEGIN { $^W = 1; $| = 1; print "1..21\n"; }
 END {print "not ok 1\n" unless $loaded;}
 
 use BikePower;
@@ -68,6 +68,11 @@ for my $i (0 .. 1) {
     }
     print "ok " . ($ok++) . "\n";
 
+    if (int($o->{'_out'}{'P'}) != 212) {
+	print "not ";
+    }
+    print "ok " . ($ok++) . "\n";
+
     $o->given('P');
     $o->power($power0);
 
@@ -78,6 +83,11 @@ for my $i (0 .. 1) {
     }
 
     if (sprintf("%.1f", $o->velocity*3.6) ne $v0) {
+	print "not ";
+    }
+    print "ok " . ($ok++) . "\n";
+
+    if (sprintf("%.1f", $o->{'_out'}{V}) ne $v0) {
 	print "not ";
     }
     print "ok " . ($ok++) . "\n";
